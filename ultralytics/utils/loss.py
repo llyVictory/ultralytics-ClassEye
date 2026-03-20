@@ -713,11 +713,13 @@ class v8PoseLoss(v8DetectionLoss):
             (batch_size, max_kpts, keypoints.shape[1], keypoints.shape[2]), device=keypoints.device
         )
 
-        # TODO: any idea how to vectorize this?
-        # Fill batched_keypoints with keypoints based on batch_idx
-        for i in range(batch_size):
-            keypoints_i = keypoints[batch_idx == i]
-            batched_keypoints[i, : keypoints_i.shape[0]] = keypoints_i
+        # Vectorized fill: compute within-batch position for each keypoint using cumulative offsets
+        batch_idx_long = batch_idx.long()
+        offsets = torch.zeros(batch_size + 1, dtype=torch.long, device=keypoints.device)
+        offsets.scatter_add_(0, batch_idx_long + 1, torch.ones_like(batch_idx_long))
+        offsets = offsets.cumsum(0)
+        within_idx = torch.arange(len(batch_idx), device=keypoints.device) - offsets[batch_idx_long]
+        batched_keypoints[batch_idx_long, within_idx] = keypoints
 
         # Expand dimensions of target_gt_idx to match the shape of batched_keypoints
         target_gt_idx_expanded = target_gt_idx.unsqueeze(-1).unsqueeze(-1)
