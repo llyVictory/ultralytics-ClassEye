@@ -23,7 +23,7 @@ Data preparation is the foundation of successful [computer vision](https://www.u
 
 The Data section of Ultralytics Platform helps you:
 
-- **Upload** images, videos, and dataset files (ZIP, TAR, NDJSON)
+- **Upload** images, videos, and dataset files (ZIP, TAR including `.tar.gz`/`.tgz`, NDJSON)
 - **Annotate** with manual drawing tools and SAM-powered smart labeling — choose from [SAM 2.1](../../models/sam-2.md) or the new [SAM 3](../../models/sam-3.md)
 - **Analyze** your data with statistics and visualizations
 - **Export** in [NDJSON format](../../datasets/detect/index.md#ultralytics-ndjson-format) for local training
@@ -142,7 +142,7 @@ Ultralytics Platform supports:
 
 **Videos:** MP4, WebM, MOV, AVI, MKV, M4V (max 1GB, frames extracted at 1 FPS, max 100 frames)
 
-**Dataset files:** ZIP or TAR archives (max 10GB on Free, 20GB on Pro, 50GB on Enterprise) containing images with optional [YOLO-format labels](../../datasets/detect/index.md#ultralytics-yolo-format), plus NDJSON exports
+**Dataset files:** ZIP or TAR archives including `.tar.gz` and `.tgz` (max 10GB on Free, 20GB on Pro, 50GB on Enterprise) containing images with optional [YOLO-format labels](../../datasets/detect/index.md#ultralytics-yolo-format), plus NDJSON exports
 
 ### What is the maximum dataset size?
 

@@ -64,7 +64,7 @@ graph LR
 
 | Stage        | Features                                                                                                                                       |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Upload**   | Images (50MB), videos (1GB), and dataset files (ZIP, TAR, NDJSON) with automatic processing                                                    |
+| **Upload**   | Images (50MB), videos (1GB), and dataset files (ZIP, TAR including `.tar.gz`/`.tgz`, NDJSON) with automatic processing                         |
 | **Annotate** | Manual tools, SAM smart annotation, YOLO auto-labeling for all 5 task types (see [supported tasks](data/index.md#supported-tasks))             |
 | **Train**    | Cloud GPUs (20 free + 3 Pro-exclusive), real-time metrics, project organization                                                                |
 | **Export**   | [17 deployment formats](../modes/export.md) (ONNX, TensorRT, CoreML, TFLite, etc.; see [supported formats](train/models.md#supported-formats)) |
