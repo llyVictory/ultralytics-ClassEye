@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClassEye - 教室人头识别与分排统计系统</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2d2d2d;
+            --primary-hover: #1a1a1a;
+            --bg: #f5f5f7;
+            --card-bg: #ffffff;
+            --text-main: #1d1d1f;
+            --text-muted: #86868b;
+            --accent: #2563eb;
+            --border: #e1e1e3;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        header {
+            background: #ffffff;
+            padding: 1.5rem 0;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            margin: 0;
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            font-size: 0.95rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem 4rem;
+        }
+
+        .upload-section {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            padding: 2.5rem;
+            text-align: center;
+            border: 1px solid var(--border);
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .upload-btn {
+            background: var(--primary);
+            color: white;
+            padding: 0.8rem 2rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            display: inline-block;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .upload-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5rem;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s ease-out;
+            margin-bottom: 2rem;
+        }
+
+        .results-grid.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .preview-card {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .stats-card {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            height: fit-content;
+        }
+
+        .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .total-badge {
+            background: #f2f2f7;
+            color: var(--text-main);
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .editor-toolbar {
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1.5rem;
+        }
+
+        .toolbar-tip {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .sec-btn {
+            background: #ffffff;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 0.6rem;
+            border-radius: 0.4rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .sec-btn:hover { background: #f8f8f8; }
+
+        .row-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid #f2f2f7;
+        }
+
+        .row-name { color: var(--text-muted); font-weight: 400; font-size: 0.9rem; }
+        .row-count { color: var(--text-main); font-weight: 500; }
+
+        /* 展示结果卡片 */
+        .output-card {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            padding: 3rem;
+            border: 1px solid var(--border);
+            display: none;
+            margin-top: 3rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            animation: fadeIn 0.8s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .output-img-container {
+            width: 100%;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            margin-top: 1.5rem;
+            background: #f0f0f0;
+        }
+
+        .loading {
+            display: none;
+            margin: 2rem 0;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>ClassEye</h1>
+    <p class="subtitle">Classroom Row-Level Analytics System</p>
+</header>
+
+<div class="container">
+    <div class="upload-section">
+        <form id="uploadForm">
+            <label class="upload-btn" for="fileInput">
+                上传教室图片
+            </label>
+            <input type="file" id="fileInput" name="file" accept="image/*">
+            <p style="margin-top: 1rem; color: var(--text-muted); font-size: 0.85rem;">支持 JPG / PNG 格式</p>
+        </form>
+        <div id="loader" class="loading">正在分析数据，请稍候...</div>
+    </div>
+
+    <!-- 交互划线编辑器 -->
+    <div id="resultArea" class="results-grid">
+        <div class="preview-card" id="imageWrapper" style="position: relative; user-select: none;">
+            <img id="resultImg" src="" style="width: 100%; display: block;">
+            <canvas id="lineCanvas" style="position: absolute; top: 0; left: 0; cursor: crosshair;"></canvas>
+        </div>
+        <div class="stats-card">
+            <div class="stats-header">
+                <h2 style="margin: 0; font-size: 1.1rem; font-weight: 600;">分排配置</h2>
+            </div>
+            
+            <div class="editor-toolbar">
+                <p class="toolbar-tip">
+                    1. 在空白处拖拽绘制分割线<br>
+                    2. 调整左右端点确定排的角度<br>
+                    3. 选中线按 Delete 可删除
+                </p>
+                <div class="btn-group">
+                    <button class="upload-btn" style="grid-column: span 2; padding: 0.7rem;" onclick="runAIAnalysis()">确认并触发检测</button>
+                    <button class="sec-btn" onclick="undo()">撤销操作</button>
+                    <button class="sec-btn" onclick="clearAllLines()">清除全部</button>
+                    <button class="sec-btn" id="delBtn" style="color: #ef4444; border-color: #fecaca; display: none;" onclick="deleteSelected()">删除当前</button>
+                </div>
+            </div>
+
+            <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 1rem;">统计结果 (预览)</h3>
+            <div id="rowList"></div>
+        </div>
+    </div>
+
+    <!-- 最终识别图结果展示 -->
+    <div id="finalOutputCard" class="output-card">
+        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600;">识别检测报表</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">以下是模型识别出的原始标注结果图</p>
+        <div class="output-img-container">
+            <img id="finalResultImg" src="" style="width: 100%; display: block;">
+        </div>
+    </div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const resultImg = document.getElementById('resultImg');
+    const resultArea = document.getElementById('resultArea');
+    const lineCanvas = document.getElementById('lineCanvas');
+    const finalOutputCard = document.getElementById('finalOutputCard');
+    const finalResultImg = document.getElementById('finalResultImg');
+    const ctx = lineCanvas.getContext('2d');
+    const loader = document.getElementById('loader');
+    const delBtn = document.getElementById('delBtn');
+
+    let currentFile = null;
+    let lines = []; 
+    let history = [];
+    let isDrawing = false;
+    let isDragging = false;
+    let dragTarget = null;
+    let selectedLine = null;
+
+    function initCanvas() {
+        if (resultImg.clientWidth === 0 || resultImg.clientHeight === 0) {
+            setTimeout(initCanvas, 100);
+            return;
+        }
+        lineCanvas.width = resultImg.clientWidth;
+        lineCanvas.height = resultImg.clientHeight;
+        draw();
+    }
+
+    window.addEventListener('resize', initCanvas);
+
+    function draw() {
+        ctx.clearRect(0, 0, lineCanvas.width, lineCanvas.height);
+        lines.forEach(line => {
+            const isSelected = (line === selectedLine);
+            ctx.beginPath();
+            ctx.setLineDash([6, 4]);
+            ctx.strokeStyle = isSelected ? '#2563eb' : '#fb923c';
+            ctx.lineWidth = 2;
+            ctx.moveTo(line.p1.x, line.p1.y);
+            ctx.lineTo(line.p2.x, line.p2.y);
+            ctx.stroke();
+            ctx.setLineDash([]); 
+
+            if (isSelected || isDragging) {
+                drawAnchor(line.p1.x, line.p1.y);
+                drawAnchor(line.p2.x, line.p2.y);
+            }
+        });
+    }
+
+    function drawAnchor(x, y) {
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#fb923c';
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    }
+
+    lineCanvas.onmousedown = (e) => {
+        const x = e.offsetX;
+        const y = e.offsetY;
+        for (let line of lines) {
+            if (Math.hypot(line.p1.x - x, line.p1.y - y) < 15) {
+                dragTarget = { line, pointType: 'p1' };
+                selectedLine = line;
+                isDragging = true;
+                saveHistory();
+                return;
+            }
+            if (Math.hypot(line.p2.x - x, line.p2.y - y) < 15) {
+                dragTarget = { line, pointType: 'p2' };
+                selectedLine = line;
+                isDragging = true;
+                saveHistory();
+                return;
+            }
+        }
+        for (let line of lines) {
+            const dist = distToLine(x, y, line.p1, line.p2);
+            if (dist < 10) {
+                dragTarget = { line, pointType: 'body', offset: y - (line.p1.y + line.p2.y)/2 };
+                selectedLine = line;
+                isDragging = true;
+                saveHistory();
+                return;
+            }
+        }
+        isDrawing = true;
+        selectedLine = null;
+        delBtn.style.display = 'none';
+        finalOutputCard.style.display = 'none';
+    };
+
+    lineCanvas.onmousemove = (e) => {
+        const x = e.offsetX;
+        const y = e.offsetY;
+        if (isDrawing) {
+            ctx.clearRect(0, 0, lineCanvas.width, lineCanvas.height);
+            draw();
+            ctx.setLineDash([4, 4]);
+            ctx.strokeStyle = 'rgba(251, 146, 60, 0.4)';
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(lineCanvas.width, y);
+            ctx.stroke();
+        } else if (isDragging && dragTarget) {
+            const line = dragTarget.line;
+            if (dragTarget.pointType === 'p1') {
+                line.p1.y = y;
+            } else if (dragTarget.pointType === 'p2') {
+                line.p2.y = y;
+            } else if (dragTarget.pointType === 'body') {
+                const dy = y - (line.p1.y + line.p2.y)/2 - dragTarget.offset;
+                line.p1.y += dy;
+                line.p2.y += dy;
+            }
+            draw();
+        }
+    };
+
+    lineCanvas.onmouseup = (e) => {
+        if (isDrawing) {
+            const y = e.offsetY;
+            const newLine = { p1: {x: 0, y: y}, p2: {x: lineCanvas.width, y: y} };
+            lines.push(newLine);
+            selectedLine = newLine;
+            saveHistory();
+        }
+        isDrawing = false; isDragging = false; dragTarget = null;
+        if (selectedLine) delBtn.style.display = 'inline-block';
+        draw();
+    };
+
+    function distToLine(x, y, p1, p2) {
+        const C = p2.x - p1.x; const D = p2.y - p1.y;
+        const dot = (x - p1.x) * C + (y - p1.y) * D;
+        const lenSq = C * C + D * D;
+        let p = lenSq !== 0 ? dot / lenSq : -1;
+        let xx, yy;
+        if (p < 0) { [xx, yy] = [p1.x, p1.y]; }
+        else if (p > 1) { [xx, yy] = [p2.x, p2.y]; }
+        else { xx = p1.x + p * C; yy = p1.y + p * D; }
+        return Math.hypot(x - xx, y - yy);
+    }
+
+    function saveHistory() {
+        history.push(JSON.stringify(lines));
+        if (history.length > 50) history.shift();
+    }
+
+    function undo() {
+        if (history.length > 1) { history.pop(); lines = JSON.parse(history[history.length - 1]); }
+        else { lines = []; }
+        selectedLine = null; delBtn.style.display = 'none'; draw();
+    }
+
+    function deleteSelected() {
+        if (selectedLine) { saveHistory(); lines = lines.filter(l => l !== selectedLine); selectedLine = null; delBtn.style.display = 'none'; draw(); }
+    }
+
+    function clearAllLines() {
+        saveHistory(); lines = []; selectedLine = null; delBtn.style.display = 'none'; draw();
+    }
+
+    fileInput.onchange = async () => {
+        if (!fileInput.files[0]) return;
+        currentFile = fileInput.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            resultImg.onload = () => {
+                document.getElementById('resultArea').classList.add('visible');
+                initCanvas();
+                setTimeout(initCanvas, 100); 
+            };
+            resultImg.src = e.target.result;
+            lines = []; history = [];
+            finalOutputCard.style.display = 'none';
+        };
+        reader.readAsDataURL(currentFile);
+    };
+
+    async function runAIAnalysis() {
+        if (!currentFile) { alert("请先上传图片"); return; }
+        loader.style.display = 'block';
+        const scaleX = resultImg.naturalWidth / lineCanvas.width;
+        const scaleY = resultImg.naturalHeight / lineCanvas.height;
+        const manualData = lines.map(line => [[line.p1.x * scaleX, line.p1.y * scaleY], [line.p2.x * scaleX, line.p2.y * scaleY]]);
+        const formData = new FormData();
+        formData.append('file', currentFile);
+        formData.append('manual_y_list', JSON.stringify(manualData));
+
+        try {
+            const response = await fetch('/upload', { method: 'POST', body: formData });
+            const data = await response.json();
+            if (data.success) {
+                renderRowsList(data.rows);
+                // 展示最终带有模型识别结果的新图
+                finalResultImg.src = data.img_url + '?t=' + new Date().getTime();
+                finalOutputCard.style.display = 'block';
+                // 平滑滚动到结果区域
+                finalOutputCard.scrollIntoView({ behavior: 'smooth' });
+            } else { alert('识别失败: ' + data.message); }
+        } catch (err) { alert('服务器通讯异常'); }
+        finally { loader.style.display = 'none'; }
+    }
+
+    function renderRowsList(rows) {
+        const rowList = document.getElementById('rowList');
+        rowList.innerHTML = '';
+        let total = 0;
+        rows.forEach(row => {
+            total += row.counts;
+            const div = document.createElement('div');
+            div.className = 'row-item';
+            div.innerHTML = `<span class="row-name">${row.name}</span><span class="row-count">人数：${row.counts}人</span>`;
+            rowList.appendChild(div);
+        });
+        
+        // 添加总人数
+        const totalDiv = document.createElement('div');
+        totalDiv.className = 'row-item';
+        totalDiv.style.borderTop = '2px solid #f2f2f7';
+        totalDiv.style.marginTop = '0.5rem';
+        totalDiv.style.paddingTop = '1rem';
+        totalDiv.innerHTML = `<span class="row-name" style="color:var(--text-main); font-weight:600;">总人数</span><span class="row-count" style="color:var(--accent); font-size:1.1rem;">${total}人</span>`;
+        rowList.appendChild(totalDiv);
+    }
+
+    document.onkeydown = (e) => {
+        if (e.ctrlKey && e.key === 'z') { undo(); e.preventDefault(); }
+        if (e.key === 'Delete' || e.key === 'Backspace') { deleteSelected(); }
+    };
+</script>
+</body>
+</html>
