@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClassEye 后台管理 - 人脸库</title>
+    <style>
+        :root {
+            --bg-site: #fbfaf8;
+            --bg-card: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #5e5e5e;
+            --text-dim: #929292;
+            --border-color: #e5e2de;
+            --accent-color: #3e3e3e;
+            --success-color: #2e7d32;
+            --error-color: #d32f2f;
+            --primary-action: #d97757;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            font-family: 'Inter', -apple-system, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-site);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 2.5rem 1rem; line-height: 1.6;
+        }
+
+        header { width: 100%; max-width: 1400px; padding-bottom: 2.5rem; text-align: center; }
+        header h1 { font-size: 1.6rem; font-weight: bold; color: var(--text-primary); }
+
+        .workspace {
+            width: 100%;
+            max-width: 1400px;
+            display: grid;
+            grid-template-columns: 350px 1fr 1fr; /* 三列平铺 */
+            gap: 1.5rem;
+            align-items: start;
+        }
+
+        @media (max-width: 1100px) {
+            .workspace { grid-template-columns: 1fr; }
+        }
+
+        .column { display: flex; flex-direction: column; gap: 1rem; min-height: 0; }
+        .column-title { font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dim); }
+
+        .card {
+            background-color: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 6px; padding: 1.5rem; box-shadow: var(--shadow);
+        }
+
+        .form-group { margin-bottom: 1.25rem; }
+        label { display: block; font-size: 0.8rem; font-weight: bold; color: var(--text-secondary); margin-bottom: 0.5rem; }
+        input[type="text"] { width: 100%; padding: 0.75rem; background: #fff; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.85rem; outline: none; }
+
+        .upload-zone {
+            width: 100%; height: 160px; border: 1px dashed var(--border-color); border-radius: 4px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            background: #fafafa; overflow: hidden; position: relative;
+        }
+        .upload-zone img { max-width: 100%; max-height: 100%; object-fit: contain; display: none; z-index: 2; }
+        .upload-hint { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 0.75rem; color: var(--text-dim); z-index: 1; text-align: center; width: 100%;
+        }
+
+        .btn {
+            width: 100%; padding: 1rem; border: none; border-radius: 4px;
+            background: var(--accent-color); color: #fff; font-size: 0.85rem; font-weight: bold;
+            cursor: pointer; transition: all 0.2s; margin-top: 1rem;
+        }
+        .btn:hover { opacity: 0.9; }
+
+        .table-wrap {
+            border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;
+            background: #fff; max-height: 650px; overflow-y: auto;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+        th {
+            background: #f8f8f8; padding: 0.75rem; text-align: left;
+            border-bottom: 2px solid var(--border-color);
+            color: var(--text-secondary); position: sticky; top: 0;
+        }
+        td { padding: 0.75rem; border-bottom: 1px solid #f0f0f0; word-break: break-all; }
+
+        .status-badge { padding: 2px 4px; border-radius: 2px; font-weight: bold; font-size: 0.65rem; }
+        .status-pass { background: rgba(46,125,50,0.1); color: var(--success-color); }
+        .status-notpass { background: rgba(211,47,47,0.1); color: var(--error-color); }
+
+        .feature-code { font-family: monospace; color: var(--primary-action); }
+        .score-box { background: #f0f0f0; padding: 2px 4px; border-radius: 2px; font-weight: bold; }
+
+        .loader {
+            display: none; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin .8s linear infinite; margin: 0 auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .action-link { cursor: pointer; color: var(--primary-action); text-decoration: underline; margin-right: 8px; font-weight: bold; font-size: 0.7rem; }
+        .action-link.delete { color: var(--error-color); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>ClassEye 后台管理系统</h1>
+    </header>
+
+    <div class="workspace">
+        
+        <!-- 第一列：人脸注册 -->
+        <div class="column">
+            <div class="column-title">1. 人员档案录入 (REGISTRY)</div>
+            <section class="card">
+                <div class="form-group">
+                    <label>工号 / 学号 / ID</label>
+                    <input type="text" id="reg-id" placeholder="唯一标识...">
+                </div>
+                <div class="form-group">
+                    <label>姓名</label>
+                    <input type="text" id="reg-name" placeholder="姓名...">
+                </div>
+                <div class="form-group">
+                    <label>参考图像 (推荐大头照)</label>
+                    <div class="upload-zone" id="reg-zone">
+                        <input type="file" id="reg-file" hidden accept="image/*">
+                        <div class="upload-hint" id="reg-hint">点击上传注册照</div>
+                        <img id="reg-preview" alt="预览">
+                    </div>
+                </div>
+                <button class="btn" id="btn-reg">
+                    <div class="loader" id="reg-loader"></div>
+                    <span id="reg-text">保存档案</span>
+                </button>
+                <div id="reg-status" style="font-size: 0.75rem; margin-top: 10px; display: none;"></div>
+            </section>
+        </div>
+
+        <!-- 第二列：人脸库 -->
+        <div class="column">
+            <div class="column-title">2. 已录入人员库 (DATABASE)</div>
+            <div class="table-wrap">
+                <table id="user-table">
+                    <thead><tr><th>ID</th><th>姓名</th><th>特征摘要</th><th>操作</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 第三列：审计日志 -->
+        <div class="column">
+            <div class="column-title">3. 系统识别审计日志 (AUDIT LOGS)</div>
+            <div class="table-wrap">
+                <table id="log-table">
+                    <thead><tr><th>ID</th><th>姓名</th><th>相似度</th><th>状态</th><th>识别时间</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const el = id => document.getElementById(id);
+
+        function handleFile(zoneId, fileId, previewId, hintId) {
+            el(zoneId).onclick = () => el(fileId).click();
+            el(fileId).onchange = e => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                        el(previewId).src = ev.target.result;
+                        el(previewId).style.display = 'block';
+                        el(hintId).style.display = 'none';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+        }
+        handleFile('reg-zone', 'reg-file', 'reg-preview', 'reg-hint');
+
+        el('btn-reg').onclick = async () => {
+            const number = el('reg-id').value;
+            const name = el('reg-name').value;
+            const file = el('reg-file').files[0];
+            if (!number || !file) { alert("请填写ID并上传照片"); return; }
+
+            setLoading('btn-reg', 'reg-loader', 'reg-text', true);
+            const formData = new FormData();
+            formData.append('number', number);
+            formData.append('name', name);
+            formData.append('file', file);
+
+            try {
+                const r = await fetch('/api/register', { method: 'POST', body: formData });
+                const d = await r.json();
+                el('reg-status').innerText = d.message;
+                el('reg-status').style.display = 'block';
+                el('reg-status').style.color = r.ok ? 'var(--success-color)' : 'var(--error-color)';
+                if (r.ok) refresh();
+            } catch (e) { alert("网络异常"); }
+            finally { setLoading('btn-reg', 'reg-loader', 'reg-text', false); }
+        };
+
+        async function refresh() {
+            try {
+                const [uResp, lResp] = await Promise.all([fetch('/api/users'), fetch('/api/logs')]);
+                const [u, l] = await Promise.all([uResp.json(), lResp.json()]);
+
+                el('user-table').querySelector('tbody').innerHTML = u.data.map(i => `
+                    <tr>
+                        <td>${i.number}</td><td>${i.name}</td>
+                        <td><span class="feature-code">${i.feature_preview}</span></td>
+                        <td>
+                            <span class="action-link" onclick="editName('${i.number}', '${i.name}')">编辑</span>
+                            <span class="action-link delete" onclick="deleteRecord('${i.number}')">删除</span>
+                        </td>
+                    </tr>
+                `).join('');
+
+                el('log-table').querySelector('tbody').innerHTML = l.data.map(i => {
+                    const isFind = i.status === 'pass';
+                    return `
+                    <tr>
+                        <td>${i.number || '-'}</td>
+                        <td>${i.name || '-'}</td>
+                        <td><span class="score-box">${(i.score*100).toFixed(1)}%</span></td>
+                        <td><span class="status-badge ${isFind ? 'status-pass' : 'status-notpass'}">${isFind ? 'Match' : 'NoMatch'}</span></td>
+                        <td>${i.created_at}</td>
+                    </tr>
+                `}).join('');
+            } catch (e) { console.error("Refresh failed", e); }
+        }
+
+        function setLoading(btn, loader, txt, state) {
+            el(btn).disabled = state;
+            el(loader).style.display = state ? 'block' : 'none';
+            el(txt).style.display = state ? 'none' : 'inline';
+        }
+
+        window.editName = async (number, oldName) => {
+            const newName = prompt("请输入新姓名：", oldName);
+            if (!newName || newName === oldName) return;
+            
+            const formData = new FormData();
+            formData.append('name', newName);
+            
+            try {
+                const r = await fetch(`/api/users/${number}`, { method: 'PUT', body: formData });
+                if (r.ok) refresh();
+                else alert("修改失败");
+            } catch (e) { alert("网络请求失败"); }
+        };
+
+        window.deleteRecord = async (number) => {
+            if (!confirm(`确定要删除工号 [${number}] 的档案吗？`)) return;
+            
+            try {
+                const r = await fetch(`/api/users/${number}`, { method: 'DELETE' });
+                if (r.ok) refresh();
+                else alert("删除失败");
+            } catch (e) { alert("网络请求失败"); }
+        };
+
+        refresh();
+        setInterval(refresh, 20000); 
+    </script>
+</body>
+</html>

@@ -13,9 +13,8 @@ from classeye.row_splitter import RowSplitter
 from classeye.visualizer import ClassEyeVisualizer
 from classeye.config import config
 
-# [NEW] 人脸识别相关导入
-from face_service import FaceService
-from database import get_all_faces, save_face, get_user_list, update_user, delete_user, get_history_logs
+# [NEW] 从独立包 face_hub 导入
+from face_hub import FaceService, get_all_faces, save_face, get_user_list, update_user, delete_user, get_history_logs, add_identify_log
 
 app = Flask(__name__)
 
@@ -43,8 +42,8 @@ def index():
 
 @app.route('/admin')
 def admin():
-    """管理后台页面"""
-    return send_from_directory('../backend', 'index.html')
+    """管理后台页面 (指向独立包内的 UI)"""
+    return send_from_directory('../face_hub/admin_ui', 'index.html')
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -123,8 +122,7 @@ def upload_file():
             res_path = os.path.join(app.root_path, RESULT_FOLDER, res_filename)
             cv2.imwrite(res_path, canvas)
 
-            # [NEW] 记录识别日志到数据库 (可选，看用户是否需要审计)
-            from database import add_identify_log
+            # [NEW] 记录识别日志到数据库
             for info in box_info_list:
                 add_identify_log(
                     number=info["number"], 

@@ -5,7 +5,11 @@ import numpy as np
 import cv2
 import logging
 from typing import Optional, List, Dict
-from adaface_loader import AdaFaceLoader
+# 注意：包内引用
+try:
+    from .adaface_loader import AdaFaceLoader
+except ImportError:
+    from adaface_loader import AdaFaceLoader
 
 # 获取 logger
 logger = logging.getLogger("FaceBackend.Service")
@@ -19,14 +23,14 @@ class FaceService:
     def init_model(self, det_thresh: float = 0.5, det_size: int = 640):
         """初始化 InsightFace & AdaFace 模型"""
         try:
-            # 自动探测模型路径：优先使用当前目录下的 models，或者项目根目录下的 models
+            # 路径适配：现在包在 face_hub/ 下，模型在 ../models/ 下
             current_dir = os.path.dirname(os.path.abspath(__file__))
+            # 优先检查当前包内的 models，如果没有，检查上级目录的 models
             model_root = os.path.join(current_dir, 'models')
-            
             if not os.path.exists(os.path.join(model_root, 'buffalo_sc')):
-                logger.warning(f"Model root {model_root} not complete, checking project structure...")
+                model_root = os.path.join(os.path.dirname(current_dir), 'models')
             
-            logger.info(f"[Step 1] Initializing InsightFace from root: {model_root}")
+            logger.info(f"[Step 1] Initializing Face Models from root: {model_root}")
             
             # 1. InsightFace (如果启用了 AdaFace，只保留对齐功能)
             allowed_modules = ['detection', 'landmark'] if self.use_adaface else None
@@ -34,13 +38,12 @@ class FaceService:
                 name='buffalo_sc', 
                 root=model_root, 
                 allowed_modules=allowed_modules,
-                providers=['CPUExecutionProvider'] # 强制 CPU 以匹配用户需求
+                providers=['CPUExecutionProvider'] # 强制 CPU
             )
-            self.app.prepare(ctx_id=-1, det_size=(det_size, det_size), det_thresh=det_thresh) # ctx_id=-1 for CPU
+            self.app.prepare(ctx_id=-1, det_size=(det_size, det_size), det_thresh=det_thresh)
             
             # 2. AdaFace (If enabled)
             if self.use_adaface:
-                # 寻找 adaface_ir101.onnx
                 adaface_path = os.path.join(model_root, 'adaface_ir101.onnx')
                 if os.path.exists(adaface_path):
                     logger.info(f"[Step 1] Initializing AdaFace from: {adaface_path}")
@@ -59,15 +62,12 @@ class FaceService:
         if face_img.size == 0:
             return None
             
-        # 1. 尝试使用 InsightFace 进行内部对齐 (获取关键点)
         faces = self.app.get(face_img)
         if not faces:
-            # 如果没检测到脸，直接整图降级提取
             if self.use_adaface and self.adaface_app:
                 return self.adaface_app.extract_feature(face_img)
             return None
             
-        # 取最大脸
         face = sorted(faces, key=lambda x: (x.bbox[2]-x.bbox[0]) * (x.bbox[3]-x.bbox[1]), reverse=True)[0]
         
         if self.use_adaface and self.adaface_app:
