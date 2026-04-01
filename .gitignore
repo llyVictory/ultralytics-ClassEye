@@ -208,3 +208,8 @@ results.csv
 
 *.docx
 *.md
+# model weights
+models/*.onnx
+models/*.onnx.data
+models/*.pt
+models/*.bin
