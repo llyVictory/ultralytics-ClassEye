@@ -8,12 +8,13 @@ class ClassEyeVisualizer:
         self.thickness = thickness
         self.font_scale = font_scale
 
-    def draw_results(self, img, results, rows_info):
+    def draw_results(self, img, results, rows_info, face_info=None):
         """
         绘制最终效果图：YOLO 检测框 + 分排统计线 + 汇总文字
         :param img: 原始 BGR 图片
         :param results: ultralytics Results 对象
         :param rows_info: 由 RowSplitter 提供的排信息 [{name, region, counts}, ...]
+        :param face_info: (可选) 与 results[0].boxes 一一对应的识别信息列表 [{name, det_conf, face_conf}, ...]
         :return: 渲染后的 BGR 图片
         """
         if img is None:
@@ -23,10 +24,19 @@ class ClassEyeVisualizer:
 
         # 1. 绘制检测框 (来自 YOLO)
         if results and len(results[0].boxes) > 0:
-            for box in results[0].boxes:
+            for i, box in enumerate(results[0].boxes):
                 # 只绘制 person 类
                 if int(box.cls[0]) == config.TARGET_CLASS:
-                    label = f"{results[0].names[int(box.cls[0])]} {box.conf[0]:.2f}"
+                    # 如果有对应的识别信息，格式化显示双得分
+                    if face_info and i < len(face_info):
+                        info = face_info[i]
+                        name = info["name"]
+                        det_score = info["det_conf"]
+                        face_score = info["face_conf"]
+                        label = f"{name} D:{det_score:.2f} F:{face_score:.2f}"
+                    else:
+                        label = f"{results[0].names[int(box.cls[0])]} {box.conf[0]:.2f}"
+                    
                     annotator.box_label(box.xyxy[0], label, color=colors(0, True))
 
         canvas = annotator.result()
