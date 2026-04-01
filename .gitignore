@@ -155,18 +155,20 @@ wandb/
 
 # Neural Network weights -----------------------------------------------------------------------------------------------
 weights/
-*.weights
-*.pt
-*.ts
-*.pb
-*.onnx
-*.engine
-*.mlmodel
-*.mlpackage
-*.torchscript
-*.tflite
-*.h5
-*.mnn
+models/
+**/*.pt
+**/*.weights
+**/*.onnx
+**/*.data
+**/*.ts
+**/*.pb
+**/*.engine
+**/*.mlmodel
+**/*.mlpackage
+**/*.torchscript
+**/*.tflite
+**/*.h5
+**/*.mnn
 *_saved_model/
 *_web_model/
 *_openvino_model/
